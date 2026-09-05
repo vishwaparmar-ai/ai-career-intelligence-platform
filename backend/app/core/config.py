@@ -28,8 +28,8 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    llm_api_key: str = ""
-    llm_model: str = "claude-sonnet-4-6"
+    groq_api_key: str = ""
+    llm_model: str = "openai/gpt-oss-120b"
 
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""

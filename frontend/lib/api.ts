@@ -87,3 +87,57 @@ export function listResumes(token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type ExperienceEntry = {
+  title: string;
+  company: string;
+  start_date: string | null;
+  end_date: string | null;
+  description: string | null;
+};
+
+export type EducationEntry = {
+  degree: string;
+  institution: string;
+  start_date: string | null;
+  end_date: string | null;
+};
+
+export type ProjectEntry = {
+  name: string;
+  description: string | null;
+  technologies: string[];
+};
+
+export type CertificationEntry = {
+  name: string;
+  issuer: string | null;
+  date: string | null;
+};
+
+export type CandidateProfileData = {
+  skills: string[];
+  experience: ExperienceEntry[];
+  education: EducationEntry[];
+  projects: ProjectEntry[];
+  certifications: CertificationEntry[];
+};
+
+export type CandidateProfileResponse = {
+  status: "ready" | "failed";
+  data: CandidateProfileData | null;
+  error_message: string | null;
+};
+
+export function parseResume(token: string, resumeId: string) {
+  return request<CandidateProfileResponse>(`/resumes/${resumeId}/parse`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getCandidateProfile(token: string, resumeId: string) {
+  return request<CandidateProfileResponse>(`/resumes/${resumeId}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
