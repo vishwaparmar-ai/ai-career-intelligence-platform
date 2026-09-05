@@ -2,24 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { signup } from "@/lib/api";
+import { setToken } from "@/lib/auth";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
 
-    // TODO (Day 11): replace with a real call to
-    // `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`
-    console.log("signup submit", { name, email, password });
-
-    setTimeout(() => setSubmitting(false), 400);
+    try {
+      const { access_token } = await signup({ name, email, password });
+      setToken(access_token);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -58,6 +67,7 @@ export default function SignupPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        {error && <p className="text-sm text-gap">{error}</p>}
         <Button type="submit" disabled={submitting} className="mt-2">
           {submitting ? "Creating account…" : "Create account"}
         </Button>
