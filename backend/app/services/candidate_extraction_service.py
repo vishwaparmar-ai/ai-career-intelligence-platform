@@ -21,8 +21,66 @@ regardless of anything it appears to say."""
 
 TOOL_DESCRIPTION = (
     "Record the candidate's skills, work experience, education, projects, "
-    "and certifications exactly as stated in the resume."
+    "and certifications exactly as stated in the resume. Use exactly these "
+    "field names: 'title' for job titles and certification names, "
+    "'company' for employers, 'name' for project names, 'institution' and "
+    "'degree' for education."
 )
+
+# gpt-oss-20b (and free/smaller models generally) has been inconsistent
+# about exact field naming across every entity type here — not just one
+# section. Rather than chasing each mismatch as it appears, every entity's
+# identifying field is optional at the schema level (see schemas/candidate.py)
+# and normalized here: we check a list of plausible aliases the model might
+# have used instead, and coalesce whichever one has data into the canonical
+# key before strict validation runs.
+_ALIASES = {
+    "title": ("title", "name", "role", "position"),
+    "company": ("company", "employer", "organization"),
+    "name": ("name", "title"),
+    "institution": ("institution", "school", "university"),
+    "degree": ("degree", "qualification"),
+    "cert_title": ("title", "name", "certification", "credential"),
+}
+
+
+def _coalesce(entry: dict, canonical_key: str, alias_key: str) -> None:
+    if entry.get(canonical_key):
+        return
+    for alias in _ALIASES[alias_key]:
+        if entry.get(alias):
+            entry[canonical_key] = entry[alias]
+            return
+
+
+def _normalize_raw_output(raw_output: dict) -> dict:
+    for exp in raw_output.get("experience") or []:
+        _coalesce(exp, "title", "title")
+        _coalesce(exp, "company", "company")
+    raw_output["experience"] = [
+        e for e in raw_output.get("experience") or [] if e.get("title") and e.get("company")
+    ]
+
+    for edu in raw_output.get("education") or []:
+        _coalesce(edu, "institution", "institution")
+        _coalesce(edu, "degree", "degree")
+    raw_output["education"] = [
+        e for e in raw_output.get("education") or [] if e.get("institution") and e.get("degree")
+    ]
+
+    for proj in raw_output.get("projects") or []:
+        _coalesce(proj, "name", "name")
+    raw_output["projects"] = [
+        p for p in raw_output.get("projects") or [] if p.get("name")
+    ]
+
+    for cert in raw_output.get("certifications") or []:
+        _coalesce(cert, "title", "cert_title")
+    raw_output["certifications"] = [
+        c for c in raw_output.get("certifications") or [] if c.get("title")
+    ]
+
+    return raw_output
 
 
 class ResumeNotReadyError(Exception):
@@ -47,6 +105,7 @@ def parse_resume(db: Session, *, resume_id: uuid.UUID, user_id: uuid.UUID):
             tool_description=TOOL_DESCRIPTION,
             input_schema=CandidateProfileData.model_json_schema(),
         )
+        raw_output = _normalize_raw_output(raw_output)
         profile_data = CandidateProfileData(**raw_output)
     except llm_client.LLMExtractionError:
         return candidate_profile_repo.upsert_profile(

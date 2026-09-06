@@ -39,8 +39,12 @@ export function CandidateProfileCard({ data }: { data: CandidateProfileData }) {
                     {exp.start_date ?? "?"} – {exp.end_date ?? "?"}
                   </p>
                 )}
-                {exp.description && (
-                  <p className="mt-1 text-ink/70">{exp.description}</p>
+                {exp.description.length > 0 && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-ink/70">
+                    {exp.description.map((line, j) => (
+                      <li key={j}>{line}</li>
+                    ))}
+                  </ul>
                 )}
               </li>
             ))}
@@ -79,8 +83,12 @@ export function CandidateProfileCard({ data }: { data: CandidateProfileData }) {
             {data.projects.map((proj, i) => (
               <li key={i} className="text-sm">
                 <p className="font-medium text-ink">{proj.name}</p>
-                {proj.description && (
-                  <p className="text-ink/70">{proj.description}</p>
+                {proj.description.length > 0 && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-ink/70">
+                    {proj.description.map((line, j) => (
+                      <li key={j}>{line}</li>
+                    ))}
+                  </ul>
                 )}
                 {proj.technologies.length > 0 && (
                   <p className="mt-1 text-xs text-ink/50">
@@ -101,7 +109,7 @@ export function CandidateProfileCard({ data }: { data: CandidateProfileData }) {
           <ul className="mt-2 space-y-1 text-sm">
             {data.certifications.map((cert, i) => (
               <li key={i} className="text-ink/80">
-                {cert.name}
+                {cert.title ?? "Untitled certification"}
                 {cert.issuer ? ` · ${cert.issuer}` : ""}
                 {cert.date ? ` (${cert.date})` : ""}
               </li>

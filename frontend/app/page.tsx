@@ -3,8 +3,8 @@ import Link from "next/link";
 const steps = [
   {
     n: "1",
-    title: "Upload your resume and the job",
-    body: "Drop in a resume and paste the job description you're aiming for. Nothing is scored yet — this just becomes structured data.",
+    title: "Create a free account",
+    body: "Sign up, then upload a resume and paste the job description you're aiming for — right in your dashboard.",
   },
   {
     n: "2",
@@ -18,6 +18,21 @@ const steps = [
   },
 ];
 
+const benefits = [
+  {
+    title: "Evidence-backed, not a black box",
+    body: "Every matched or missing skill traces back to a specific line in your resume or the posting — never a vague AI guess.",
+  },
+  {
+    title: "Built for your next application",
+    body: "Paste in the actual job you're going for. The gaps and roadmap are specific to that posting, not generic career advice.",
+  },
+  {
+    title: "Practice for the interview it leads to",
+    body: "Once your gaps are known, get interview questions pulled from the same job description — not a random question bank.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <div className="mx-auto max-w-6xl px-6">
@@ -28,7 +43,7 @@ export default function LandingPage() {
           </h1>
           <p className="mt-6 max-w-prose text-ink/70">
             CareerIQ reads your resume against a real job description and
-            explains the score: what matches, what's missing, and the
+            explains the score: what matches, what&apos;s missing, and the
             shortest practical path to close the gap.
           </p>
           <div className="mt-8 flex items-center gap-4">
@@ -73,6 +88,9 @@ export default function LandingPage() {
               <span className="text-ink/80">Kubernetes, event-driven architecture</span>
             </div>
           </dl>
+          <p className="mt-4 text-xs text-ink/40">
+            Example output — sign up to run your own.
+          </p>
         </div>
       </section>
 
@@ -87,6 +105,33 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="border-t border-line py-16">
+        <h2 className="text-2xl text-navy">Why CareerIQ</h2>
+        <div className="mt-10 grid gap-10 md:grid-cols-3">
+          {benefits.map((b) => (
+            <div key={b.title}>
+              <h3 className="text-lg text-ink">{b.title}</h3>
+              <p className="mt-2 text-sm text-ink/70">{b.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-line py-16 text-center">
+        <h2 className="text-2xl text-navy">
+          See your readiness for the job you actually want.
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-ink/60">
+          Free to start. Takes a couple of minutes once you're signed in.
+        </p>
+        <Link
+          href="/signup"
+          className="mt-6 inline-block rounded-full bg-navy px-6 py-3 text-sm font-medium text-paper transition-colors hover:bg-navy-light"
+        >
+          Get your score
+        </Link>
       </section>
     </div>
   );

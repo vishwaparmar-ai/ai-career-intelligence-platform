@@ -93,7 +93,7 @@ export type ExperienceEntry = {
   company: string;
   start_date: string | null;
   end_date: string | null;
-  description: string | null;
+  description: string[];
 };
 
 export type EducationEntry = {
@@ -105,12 +105,12 @@ export type EducationEntry = {
 
 export type ProjectEntry = {
   name: string;
-  description: string | null;
+  description: string[];
   technologies: string[];
 };
 
 export type CertificationEntry = {
-  name: string;
+  title: string | null;
   issuer: string | null;
   date: string | null;
 };
@@ -138,6 +138,59 @@ export function parseResume(token: string, resumeId: string) {
 
 export function getCandidateProfile(token: string, resumeId: string) {
   return request<CandidateProfileResponse>(`/resumes/${resumeId}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type JobRead = {
+  id: string;
+  title: string | null;
+  company: string | null;
+  raw_text: string;
+  created_at: string;
+};
+
+export function createJob(
+  token: string,
+  input: { title?: string; company?: string; raw_text: string }
+) {
+  return request<JobRead>("/jobs", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}
+
+export function listJobs(token: string) {
+  return request<JobRead[]>("/jobs", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type JobProfileData = {
+  required_skills: string[];
+  preferred_skills: string[];
+  min_years_experience: number | null;
+  seniority: string | null;
+  responsibilities: string[];
+  education_requirements: string[];
+};
+
+export type JobProfileResponse = {
+  status: "ready" | "failed";
+  data: JobProfileData | null;
+  error_message: string | null;
+};
+
+export function parseJob(token: string, jobId: string) {
+  return request<JobProfileResponse>(`/jobs/${jobId}/parse`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getJobProfile(token: string, jobId: string) {
+  return request<JobProfileResponse>(`/jobs/${jobId}/profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

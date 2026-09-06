@@ -4,34 +4,47 @@ from backend.app.models.candidate_profile import ProfileStatus
 
 
 class ExperienceEntry(BaseModel):
-    title: str
-    company: str
+    # Optional at the wire level for the same reason as everything else
+    # below: gpt-oss-20b has been inconsistent about field naming across
+    # every entity type, and a hard-required field lets Groq's own schema
+    # validator reject the whole tool call over one naming miss. It's
+    # normalized back to non-null in candidate_extraction_service.py before
+    # we persist anything, so downstream code can still assume it's set.
+    title: str | None = None
+    company: str | None = None
     start_date: str | None = Field(
         None, description="As written in the resume, e.g. 'Jan 2022' or '2022'"
     )
     end_date: str | None = Field(
         None, description="As written in the resume, e.g. 'Mar 2024' or 'Present'"
     )
-    description: str | None = Field(
-        None, description="Key responsibilities or achievements, summarized"
+    # A list, not a single string — real resumes describe a role as
+    # separate bullet points, and forcing the model to collapse that into
+    # one string fights the data it's actually looking at.
+    description: list[str] = Field(
+        default_factory=list,
+        description="Key responsibilities or achievements, one per bullet point",
     )
 
 
 class EducationEntry(BaseModel):
-    degree: str
-    institution: str
+    degree: str | None = None
+    institution: str | None = None
     start_date: str | None = None
     end_date: str | None = None
 
 
 class ProjectEntry(BaseModel):
-    name: str
-    description: str | None = None
+    name: str | None = None
+    description: list[str] = Field(
+        default_factory=list,
+        description="Key details about the project, one per bullet point",
+    )
     technologies: list[str] = Field(default_factory=list)
 
 
 class CertificationEntry(BaseModel):
-    name: str
+    title: str | None = None
     issuer: str | None = None
     date: str | None = None
 
