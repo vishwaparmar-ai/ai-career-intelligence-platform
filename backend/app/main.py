@@ -9,6 +9,7 @@ from backend.app.api.routes.auth import router as auth_router
 from backend.app.api.routes.resume import router as resume_router
 from backend.app.api.routes.candidate import router as candidate_router
 from backend.app.api.routes.jobs import router as job_router
+from backend.app.api.routes.skills import router as skill_router
 
 settings = get_settings()
 
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(resume_router)
 app.include_router(candidate_router)
 app.include_router(job_router)
+app.include_router(skill_router)
 
 @app.get("/health")
 def health():

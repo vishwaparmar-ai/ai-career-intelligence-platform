@@ -3,3 +3,5 @@ from backend.app.models.resume_model import Resume
 from backend.app.models.candidate_profile import CandidateProfile
 from backend.app.models.job_model import Job
 from backend.app.models.job_profile_model import JobProfile
+from backend.app.models.skills_model import Skill
+from backend.app.models.skill_alias_model import SkillAlias
