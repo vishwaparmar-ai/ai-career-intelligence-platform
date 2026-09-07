@@ -1,5 +1,6 @@
 import { ResumeUploadPanel } from "@/components/resume-upload-panel";
 import { JobInputPanel } from "@/components/job-input-panel";
+import { AnalysisPanel } from "@/components/analysis-panel";
 
 export default function DashboardOverviewPage() {
   return (
@@ -15,15 +16,11 @@ export default function DashboardOverviewPage() {
         <JobInputPanel compact />
       </div>
 
-      <div className="mt-12 grid gap-6 md:grid-cols-3">
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="text-sm font-medium text-ink/70">Readiness score</h2>
-          <p className="mt-4 text-sm text-ink/50">
-            No analysis yet. Extract both a resume and a job above to see
-            your score here.
-          </p>
-        </section>
+      <div className="mt-12">
+        <AnalysisPanel />
+      </div>
 
+      <div className="mt-12 grid gap-6 md:grid-cols-2">
         <section className="rounded-2xl border border-line bg-white p-6">
           <h2 className="text-sm font-medium text-ink/70">30-day roadmap</h2>
           <p className="mt-4 text-sm text-ink/50">

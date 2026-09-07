@@ -194,3 +194,60 @@ export function getJobProfile(token: string, jobId: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type SkillMatchDetail = {
+  matched: string[];
+  missing: string[];
+  score: number;
+};
+
+export type ExperienceMatchDetail = {
+  candidate_years: number;
+  required_years: number | null;
+  score: number;
+};
+
+export type ProjectMatchDetail = {
+  matched_skills: string[];
+  score: number;
+};
+
+export type EducationMatchDetail = {
+  candidate_level: string | null;
+  required_level: string | null;
+  score: number;
+};
+
+export type MatchResult = {
+  overall_score: number;
+  required_skills: SkillMatchDetail;
+  preferred_skills: SkillMatchDetail;
+  experience: ExperienceMatchDetail;
+  projects: ProjectMatchDetail;
+  education: EducationMatchDetail;
+  semantic_score: number;
+  weights: Record<string, number>;
+};
+
+export type AnalysisRead = {
+  id: string;
+  resume_id: string;
+  job_id: string;
+  overall_score: number;
+  result: MatchResult;
+  created_at: string;
+};
+
+export function runAnalysis(token: string, resumeId: string, jobId: string) {
+  return request<AnalysisRead>("/analyses", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ resume_id: resumeId, job_id: jobId }),
+  });
+}
+
+export function listAnalyses(token: string) {
+  return request<AnalysisRead[]>("/analyses", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
