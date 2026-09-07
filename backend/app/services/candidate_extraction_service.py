@@ -7,6 +7,7 @@ from backend.app.models.candidate_profile import ProfileStatus
 from backend.app.models.resume_model import ResumeStatus
 from backend.app.repositories import candidate_profile_repo, resume_repo
 from backend.app.schemas.candidate_schema import CandidateProfileData
+from backend.app.services.rag import embedding_service
 from backend.app.services.llm import client as llm_client
 
 # The resume's extracted text is untrusted input (Day 12's PDF extraction
@@ -126,6 +127,9 @@ def parse_resume(db: Session, *, resume_id: uuid.UUID, user_id: uuid.UUID):
             error_message="The extracted data didn't match the expected format. Try again.",
         )
 
+    embedding_text = embedding_service.candidate_profile_to_text(profile_data)
+    embedding_vector = embedding_service.embed_text(embedding_text)
+
     return candidate_profile_repo.upsert_profile(
         db,
         resume_id=resume.id,
@@ -133,4 +137,5 @@ def parse_resume(db: Session, *, resume_id: uuid.UUID, user_id: uuid.UUID):
         status=ProfileStatus.ready,
         data=profile_data.model_dump(mode="json"),
         error_message=None,
+        embedding=embedding_vector,
     )

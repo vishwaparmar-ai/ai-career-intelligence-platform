@@ -14,9 +14,10 @@ from backend.app.schemas.candidate_schema import CandidateProfileData, Education
 from backend.app.schemas.job_schema import JobProfileData
 from backend.app.services.matching import skill_taxonomy
 
-# Configurable, per the roadmap's Day 16 spec. semantic is a real weight
-# slot, not a rounding fudge — it scores 0.0 until Day 17 wires in actual
-# embedding similarity, at which point only that one function changes.
+#  Configurable, per the roadmap's Day 16 spec. semantic_score is now a
+# real caller-supplied value (see analysis_service.py, which computes it
+# via pgvector cosine similarity) rather than hardcoded — this function
+# stays a pure, deterministic scorer given whatever inputs it's handed.
 WEIGHTS: dict[str, float] = {
     "required_skills": 0.40,
     "experience": 0.20,
@@ -25,11 +26,11 @@ WEIGHTS: dict[str, float] = {
     "semantic": 0.10,
     "education": 0.05,
 }
-
-
+ 
+ 
 # ---- skills -----------------------------------------------------------
-
-
+ 
+ 
 def _score_skill_overlap(
     candidate_skills_lower: set[str], target_skills: list[str]
 ) -> SkillMatchDetail:
@@ -37,22 +38,22 @@ def _score_skill_overlap(
         # Nothing to require/prefer means nothing to be missing — a job
         # with no preferred skills listed shouldn't drag the score down.
         return SkillMatchDetail(matched=[], missing=[], score=1.0)
-
+ 
     matched = [s for s in target_skills if s.lower() in candidate_skills_lower]
     missing = [s for s in target_skills if s.lower() not in candidate_skills_lower]
     return SkillMatchDetail(
         matched=matched, missing=missing, score=len(matched) / len(target_skills)
     )
-
-
+ 
+ 
 # ---- experience ---------------------------------------------------------
-
+ 
 _MONTHS = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
-
-
+ 
+ 
 def _parse_resume_date(value: str | None, *, is_end: bool) -> date | None:
     """
     Best-effort parser for the free-text date formats resumes actually use
@@ -63,27 +64,27 @@ def _parse_resume_date(value: str | None, *, is_end: bool) -> date | None:
     if not value:
         return None
     text = value.strip().lower()
-
+ 
     if text in ("present", "current", "now", "ongoing"):
         return date.today()
-
+ 
     if m := re.match(r"^(\d{1,2})[/-](\d{4})$", text):
         month, year = int(m.group(1)), int(m.group(2))
         if 1 <= month <= 12:
             return date(year, month, 1)
-
+ 
     if m := re.match(r"^([a-z]+)\s+(\d{4})$", text):
         month = _MONTHS.get(m.group(1)[:3])
         if month:
             return date(int(m.group(2)), month, 1)
-
+ 
     if m := re.match(r"^(\d{4})$", text):
         year = int(m.group(1))
         return date(year, 12 if is_end else 1, 1)
-
+ 
     return None
-
-
+ 
+ 
 def _total_experience_years(experience: list[ExperienceEntry]) -> float:
     total_days = 0
     for exp in experience:
@@ -95,8 +96,8 @@ def _total_experience_years(experience: list[ExperienceEntry]) -> float:
     # simplification for an MVP; worth flagging as a known limitation in
     # the Day 28 evaluation writeup.
     return round(total_days / 365.25, 1)
-
-
+ 
+ 
 def _score_experience(
     candidate_years: float, min_years: int | None
 ) -> ExperienceMatchDetail:
@@ -108,17 +109,17 @@ def _score_experience(
     return ExperienceMatchDetail(
         candidate_years=candidate_years, required_years=float(min_years), score=score
     )
-
-
+ 
+ 
 # ---- projects -----------------------------------------------------------
-
-
+ 
+ 
 def _score_projects(
     db: Session, projects, required_skills_normalized: list[str]
 ) -> ProjectMatchDetail:
     if not required_skills_normalized:
         return ProjectMatchDetail(matched_skills=[], score=1.0 if projects else 0.5)
-
+ 
     project_skills_lower = {
         skill_taxonomy.normalize_skill(db, tech).lower()
         for p in projects
@@ -130,25 +131,25 @@ def _score_projects(
     return ProjectMatchDetail(
         matched_skills=matched, score=len(matched) / len(required_skills_normalized)
     )
-
-
+ 
+ 
 # ---- education ------------------------------------------------------------
-
+ 
 _DEGREE_LEVELS: list[tuple[int, str, list[str]]] = [
     (3, "PhD", ["phd", "doctorate", "doctoral"]),
     (2, "Master's", ["master", "m.tech", "m.sc", "mba", "postgraduate", "post-graduate"]),
     (1, "Bachelor's", ["bachelor", "b.tech", "b.sc", "b.e.", "undergraduate"]),
 ]
-
-
+ 
+ 
 def _degree_level(text: str) -> tuple[int, str | None]:
     lowered = text.lower()
     for level, label, keywords in _DEGREE_LEVELS:
         if any(k in lowered for k in keywords):
             return level, label
     return 0, None
-
-
+ 
+ 
 def _score_education(
     candidate_education: list[EducationEntry], requirements: list[str]
 ) -> EducationMatchDetail:
@@ -157,65 +158,67 @@ def _score_education(
         default=(0, None),
         key=lambda x: x[0],
     )
-
+ 
     if not requirements:
         return EducationMatchDetail(
             candidate_level=candidate_label, required_level=None, score=1.0
         )
-
+ 
     required_level, required_label = max(
         (_degree_level(r) for r in requirements), default=(0, None), key=lambda x: x[0]
     )
-
+ 
     if required_level == 0:
         # The posting mentions education but not in a way we recognize as
         # a degree level (e.g. "relevant field") — don't penalize for it.
         return EducationMatchDetail(
             candidate_level=candidate_label, required_level=None, score=1.0
         )
-
+ 
     score = 1.0 if candidate_level >= required_level else 0.0
     return EducationMatchDetail(
         candidate_level=candidate_label, required_level=required_label, score=score
     )
-
-
+ 
+ 
 # ---- entrypoint -----------------------------------------------------------
-
-
+ 
+ 
 def compute_match(
-    db: Session, candidate_data: CandidateProfileData, job_data: JobProfileData
+    db: Session,
+    candidate_data: CandidateProfileData,
+    job_data: JobProfileData,
+    semantic_score: float = 0.0,
 ) -> MatchResult:
     candidate_skills_normalized = skill_taxonomy.normalize_skills(
         db, candidate_data.skills
     )
     candidate_skills_lower = {s.lower() for s in candidate_skills_normalized}
-
+ 
     required_normalized = skill_taxonomy.normalize_skills(
         db, job_data.required_skills or []
     )
     preferred_normalized = skill_taxonomy.normalize_skills(
         db, job_data.preferred_skills or []
     )
-
+ 
     required_detail = _score_skill_overlap(candidate_skills_lower, required_normalized)
     preferred_detail = _score_skill_overlap(candidate_skills_lower, preferred_normalized)
-
+ 
     candidate_years = _total_experience_years(candidate_data.experience)
     experience_detail = _score_experience(candidate_years, job_data.min_years_experience)
-
+ 
     projects_detail = _score_projects(db, candidate_data.projects, required_normalized)
-
+ 
     education_detail = _score_education(
         candidate_data.education, job_data.education_requirements or []
     )
-
-    # TODO (Day 17): replace with cosine similarity between candidate and
-    # job embeddings via pgvector. Kept as an explicit 0.0 rather than
-    # dropped, so today's scores are comparable to tomorrow's once this
-    # component goes live — only this line changes.
-    semantic_score = 0.0
-
+ 
+    # semantic_score is supplied by the caller (analysis_service.py),
+    # computed via pgvector cosine similarity between the stored candidate
+    # and job embeddings — this function doesn't have DB access to those
+    # specific rows, only the already-parsed profile data.
+ 
     overall = (
         WEIGHTS["required_skills"] * required_detail.score
         + WEIGHTS["experience"] * experience_detail.score
@@ -224,7 +227,7 @@ def compute_match(
         + WEIGHTS["semantic"] * semantic_score
         + WEIGHTS["education"] * education_detail.score
     )
-
+ 
     return MatchResult(
         overall_score=round(overall * 100, 1),
         required_skills=required_detail,
@@ -235,3 +238,4 @@ def compute_match(
         semantic_score=semantic_score,
         weights=WEIGHTS,
     )
+ 

@@ -2,11 +2,13 @@ import enum
 import uuid
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.database import Base
+from backend.app.models.candidate_profile import EMBEDDING_DIM
 
 
 class JobProfileStatus(str, enum.Enum):
@@ -37,6 +39,9 @@ class JobProfile(Base):
         Enum(JobProfileStatus, name="job_profile_status"), nullable=False
     )
     data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(EMBEDDING_DIM), nullable=True
+    )
     error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

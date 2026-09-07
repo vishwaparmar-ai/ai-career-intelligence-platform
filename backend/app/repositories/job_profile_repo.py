@@ -17,6 +17,7 @@ def upsert_profile(
     status: JobProfileStatus,
     data: dict | None,
     error_message: str | None,
+    embedding: list[float] | None = None,
 ) -> JobProfile:
     existing = get_by_job_id(db, job_id)
 
@@ -24,6 +25,7 @@ def upsert_profile(
         existing.status = status
         existing.data = data
         existing.error_message = error_message
+        existing.embedding = embedding
         db.commit()
         db.refresh(existing)
         return existing
@@ -34,6 +36,7 @@ def upsert_profile(
         status=status,
         data=data,
         error_message=error_message,
+        embedding=embedding,
     )
     db.add(profile)
     db.commit()

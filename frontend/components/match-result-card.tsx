@@ -76,18 +76,11 @@ export function MatchResultCard({ result }: { result: MatchResult }) {
           score={result.education.score}
           weightPct={result.weights.education * 100}
         />
-        <div>
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="text-ink/80">
-              Semantic similarity{" "}
-              <span className="text-xs text-ink/40">
-                ({result.weights.semantic * 100}% weight)
-              </span>
-            </span>
-            <span className="text-xs text-ink/40">Coming in a later update</span>
-          </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-line" />
-        </div>
+        <ScoreBar
+          label="Semantic similarity"
+          score={result.semantic_score}
+          weightPct={result.weights.semantic * 100}
+        />
       </div>
 
       <div className="mt-6 space-y-4 border-t border-line pt-6">
