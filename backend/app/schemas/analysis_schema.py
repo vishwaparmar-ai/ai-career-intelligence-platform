@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from backend.app.schemas.gap_analysis_schema import GapAnalysis
+
 
 class SkillMatchDetail(BaseModel):
     matched: list[str]
@@ -34,9 +36,6 @@ class MatchResult(BaseModel):
     experience: ExperienceMatchDetail
     projects: ProjectMatchDetail
     education: EducationMatchDetail
-    # Placeholder until Day 17 adds real embedding-based similarity —
-    # present as a real field (not omitted) so the response is honest
-    # about what it does and doesn't cover yet.
     semantic_score: float
     weights: dict[str, float]
 
@@ -47,6 +46,7 @@ class AnalysisRead(BaseModel):
     job_id: uuid.UUID
     overall_score: float
     result: MatchResult
+    gap_analysis: GapAnalysis
     created_at: datetime
 
     model_config = {"from_attributes": True}

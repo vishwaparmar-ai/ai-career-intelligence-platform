@@ -8,10 +8,12 @@ import {
   type ResumeRead,
   type JobRead,
   type MatchResult,
+  type GapAnalysis,
 } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { MatchResultCard } from "@/components/match-result-card";
+import { GapAnalysisCard } from "@/components/gap-analysis-card";
 
 export function AnalysisPanel() {
   const [resumes, setResumes] = useState<ResumeRead[]>([]);
@@ -21,6 +23,7 @@ export function AnalysisPanel() {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
+  const [gapAnalysis, setGapAnalysis] = useState<GapAnalysis | null>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -38,10 +41,12 @@ export function AnalysisPanel() {
     setRunning(true);
     setError(null);
     setResult(null);
+    setGapAnalysis(null);
 
     try {
       const analysis = await runAnalysis(token, resumeId, jobId);
       setResult(analysis.result);
+      setGapAnalysis(analysis.gap_analysis);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't run this analysis.");
     } finally {
@@ -120,6 +125,12 @@ export function AnalysisPanel() {
       {result && (
         <div className="mt-6">
           <MatchResultCard result={result} />
+        </div>
+      )}
+
+      {gapAnalysis && (
+        <div className="mt-6">
+          <GapAnalysisCard gapAnalysis={gapAnalysis} />
         </div>
       )}
     </div>

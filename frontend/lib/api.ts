@@ -229,12 +229,25 @@ export type MatchResult = {
   weights: Record<string, number>;
 };
 
+export type SkillGap = {
+  skill: string;
+  importance: "required" | "preferred";
+  status: "matched" | "partial" | "missing";
+  evidence: string | null;
+  priority: number;
+};
+
+export type GapAnalysis = {
+  gaps: SkillGap[];
+};
+
 export type AnalysisRead = {
   id: string;
   resume_id: string;
   job_id: string;
   overall_score: number;
   result: MatchResult;
+  gap_analysis: GapAnalysis;
   created_at: string;
 };
 

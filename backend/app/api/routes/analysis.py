@@ -10,8 +10,11 @@ from backend.app.models.user_model import User
 from backend.app.repositories import analysis_repo
 from backend.app.schemas.analysis_schema import AnalysisRead, MatchResult
 from backend.app.services.matching import analysis_service
+from backend.app.schemas.gap_analysis_schema import GapAnalysis
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
+
+
 
 
 class RunAnalysisRequest(BaseModel):
@@ -20,16 +23,13 @@ class RunAnalysisRequest(BaseModel):
 
 
 def _to_read(analysis) -> AnalysisRead:
-    # Built explicitly rather than via from_attributes — result_data is
-    # stored as a plain JSONB dict, so it's parsed back into the typed
-    # MatchResult here rather than relying on Pydantic to reach into a
-    # differently-named ORM column.
     return AnalysisRead(
         id=analysis.id,
         resume_id=analysis.resume_id,
         job_id=analysis.job_id,
         overall_score=analysis.overall_score,
         result=MatchResult(**analysis.result_data),
+        gap_analysis=GapAnalysis(**analysis.gap_analysis_data),
         created_at=analysis.created_at,
     )
 
