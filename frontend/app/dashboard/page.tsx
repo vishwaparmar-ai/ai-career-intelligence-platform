@@ -20,16 +20,8 @@ export default function DashboardOverviewPage() {
         <AnalysisPanel />
       </div>
 
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="text-sm font-medium text-ink/70">30-day roadmap</h2>
-          <p className="mt-4 text-sm text-ink/50">
-            Your prioritized plan is generated from your specific gaps —
-            nothing to show until then.
-          </p>
-        </section>
-
-        <section className="rounded-2xl border border-line bg-white p-6">
+      <div className="mt-12">
+        <section className="rounded-2xl border border-line bg-white p-6 md:max-w-sm">
           <h2 className="text-sm font-medium text-ink/70">Interview practice</h2>
           <p className="mt-4 text-sm text-ink/50">
             Job-specific interview questions unlock after your first

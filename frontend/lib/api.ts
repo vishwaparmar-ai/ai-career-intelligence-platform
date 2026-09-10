@@ -264,3 +264,28 @@ export function listAnalyses(token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type RoadmapItem = {
+  skill: string;
+  reason: string | null;
+  priority: string | null;
+  effort: string | null;
+  practical_task: string | null;
+};
+
+export type RoadmapData = {
+  items: RoadmapItem[];
+};
+
+export type RoadmapResponse = {
+  status: "ready" | "failed";
+  data: RoadmapData | null;
+  error_message: string | null;
+};
+
+export function generateRoadmap(token: string, analysisId: string) {
+  return request<RoadmapResponse>(`/analyses/${analysisId}/roadmap`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
