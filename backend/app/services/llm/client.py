@@ -1,17 +1,3 @@
-"""
-Provider abstraction for LLM calls. Everything that needs an LLM (resume
-parsing now, job parsing / RAG / interview later) should go through this
-module rather than importing the Groq SDK directly — swapping providers
-or models later then only touches this one file.
-
-Groq's API is OpenAI-compatible, which has a different tool-calling shape
-than Anthropic's: tools are wrapped in {"type": "function", "function": {...}},
-tool_choice names the function the same way, and the schema key is
-"parameters" (not "input_schema"). The response also comes back as
-message.tool_calls[0].function.arguments — a JSON *string* you have to
-parse yourself, not a pre-parsed dict.
-"""
-
 import json
 
 from groq import Groq
@@ -71,3 +57,57 @@ def extract_structured(
         raise LLMExtractionError(
             "Model returned malformed tool call arguments."
         ) from exc
+
+
+def generate_text(*, system_prompt: str, user_content: str) -> str:
+    """
+    Plain free-form text generation — no tool call, no forced schema. Used
+    for RAG answers and the assistant's final synthesized response, where
+    the output is prose rather than structured data to validate and store.
+    """
+    response = _client.chat.completions.create(
+        model=settings.llm_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ],
+    )
+    return (response.choices[0].message.content or "").strip()
+
+
+def select_tools(
+    *, system_prompt: str, user_content: str, tools: list[dict]
+) -> list[dict]:
+    """
+    Lets the model choose zero, one, or several tools to call
+    (tool_choice="auto"), unlike extract_structured which forces exactly
+    one specific tool. This is the "controlled" part of the agent
+    workflow: the model only ever picks from a fixed, explicit tool list
+    we defined — it can't invent a new capability or run arbitrary code,
+    only request one of the functions we've exposed.
+
+    Returns a list of {"name": ..., "arguments": {...}} — empty if the
+    model decided no tool was needed for this question.
+    """
+    response = _client.chat.completions.create(
+        model=settings.llm_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ],
+        tools=tools,
+        tool_choice="auto",
+    )
+
+    message = response.choices[0].message
+    if not message.tool_calls:
+        return []
+
+    calls = []
+    for call in message.tool_calls:
+        try:
+            arguments = json.loads(call.function.arguments)
+        except json.JSONDecodeError:
+            arguments = {}
+        calls.append({"name": call.function.name, "arguments": arguments})
+    return calls

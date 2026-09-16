@@ -13,7 +13,8 @@ from backend.app.api.routes.skills import router as skill_router
 from backend.app.api.routes.analysis import router as analysis_router
 from backend.app.api.routes.roadmap import router as roadmap_router
 from backend.app.api.routes.knowledge import router as knowledge_router
-
+from backend.app.api.routes.agent import router as agent_router
+from backend.app.api.routes.interview import router as interview_router
 
 settings = get_settings()
 
@@ -35,6 +36,8 @@ app.include_router(skill_router)
 app.include_router(analysis_router)
 app.include_router(roadmap_router)
 app.include_router(knowledge_router)
+app.include_router(agent_router)
+app.include_router(interview_router)
 
 @app.get("/health")
 def health():

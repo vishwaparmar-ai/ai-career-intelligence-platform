@@ -1,6 +1,7 @@
 import { ResumeUploadPanel } from "@/components/resume-upload-panel";
 import { JobInputPanel } from "@/components/job-input-panel";
 import { AnalysisPanel } from "@/components/analysis-panel";
+import { KnowledgeAskPanel } from "@/components/knowledge-ask-panel";
 
 export default function DashboardOverviewPage() {
   return (
@@ -21,13 +22,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       <div className="mt-12">
-        <section className="rounded-2xl border border-line bg-white p-6 md:max-w-sm">
-          <h2 className="text-sm font-medium text-ink/70">Interview practice</h2>
-          <p className="mt-4 text-sm text-ink/50">
-            Job-specific interview questions unlock after your first
-            analysis.
-          </p>
-        </section>
+        <KnowledgeAskPanel />
       </div>
     </div>
   );

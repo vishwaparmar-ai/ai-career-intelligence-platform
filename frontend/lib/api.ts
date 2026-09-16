@@ -289,3 +289,89 @@ export function generateRoadmap(token: string, analysisId: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type RAGSource = {
+  topic: string;
+  title: string;
+  similarity: number;
+};
+
+export type RAGAnswer = {
+  answer: string;
+  sources: RAGSource[];
+  grounded: boolean;
+};
+
+export function askKnowledgeBase(token: string, question: string) {
+  return request<RAGAnswer>("/knowledge/ask", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ question }),
+  });
+}
+
+export type ToolResult = {
+  tool: string;
+  result: Record<string, unknown>;
+};
+
+export type AgentAskResponse = {
+  answer: string;
+  tools_used: string[];
+  tool_results: ToolResult[];
+};
+
+export function askAssistant(
+  token: string,
+  input: { question: string; resume_id?: string; job_id?: string }
+) {
+  return request<AgentAskResponse>("/assistant/ask", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}
+
+export type InterviewQuestionState = {
+  question: string;
+  focus_skill: string | null;
+  answer: string | null;
+  answered_at: string | null;
+};
+
+export type InterviewSessionRead = {
+  id: string;
+  resume_id: string;
+  job_id: string;
+  status: "in_progress" | "completed";
+  questions: InterviewQuestionState[];
+  current_index: number;
+  created_at: string;
+};
+
+export function startInterviewSession(
+  token: string,
+  resumeId: string,
+  jobId: string
+) {
+  return request<InterviewSessionRead>("/interview-sessions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ resume_id: resumeId, job_id: jobId }),
+  });
+}
+
+export function submitInterviewAnswer(
+  token: string,
+  sessionId: string,
+  answer: string
+) {
+  return request<InterviewSessionRead>(
+    `/interview-sessions/${sessionId}/answer`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ answer }),
+    }
+  );
+}

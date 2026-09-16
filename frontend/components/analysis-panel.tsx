@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { MatchResultCard } from "@/components/match-result-card";
 import { GapAnalysisCard } from "@/components/gap-analysis-card";
 import { RoadmapCard } from "@/components/roadmap-card";
+import { AssistantPanel } from "@/components/assistant-panel";
+import { InterviewPanel } from "@/components/interview-panel";
 
 type RoadmapChoice = "unanswered" | "generating" | "shown" | "declined";
 
@@ -178,6 +180,12 @@ export function AnalysisPanel() {
         </div>
       )}
 
+      {gapAnalysis && (
+        <div className="mt-6">
+          <AssistantPanel resumeId={resumeId} jobId={jobId} />
+        </div>
+      )}
+
       {gapAnalysis && roadmapChoice === "unanswered" && (
         <div className="mt-6 rounded-2xl border border-line bg-white p-6 text-center">
           <p className="text-sm font-medium text-ink">
@@ -220,6 +228,12 @@ export function AnalysisPanel() {
       {roadmap && roadmapChoice === "shown" && (
         <div className="mt-6">
           <RoadmapCard roadmap={roadmap} />
+        </div>
+      )}
+
+      {gapAnalysis && (
+        <div className="mt-6">
+          <InterviewPanel resumeId={resumeId} jobId={jobId} />
         </div>
       )}
     </div>

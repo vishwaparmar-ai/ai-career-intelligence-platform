@@ -8,3 +8,4 @@ from backend.app.models.skill_alias_model import SkillAlias
 from backend.app.models.analysis_model import Analysis
 from backend.app.models.roadmap_model import Roadmap
 from backend.app.models.knowledge_chunk_model import KnowledgeChunk
+from backend.app.models.interview_session import InterviewSession

@@ -6,8 +6,13 @@ from backend.db.database import get_db
 from backend.app.models.user_model import User
 from backend.app.repositories import knowledge_repo
 from backend.app.services.rag import knowledge_service
+from pydantic import BaseModel,Field
+from backend.app.schemas.rag_schema import RAGAnswer
+from backend.app.services.rag import knowledge_service, rag_service
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
+
+
 
 
 @router.get("/search")
@@ -35,3 +40,16 @@ def count_knowledge(
     db: Session = Depends(get_db),
 ):
     return {"chunk_count": knowledge_repo.count_chunks(db)}
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+@router.post("/ask", response_model=RAGAnswer)
+def ask_knowledge_base(
+    payload: AskRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return rag_service.answer_question(db, payload.question)

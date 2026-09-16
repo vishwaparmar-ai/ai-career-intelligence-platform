@@ -29,3 +29,23 @@ def get_analysis_for_user(
         .filter(Analysis.id == analysis_id, Analysis.user_id == user_id)
         .first()
     )
+
+
+def get_latest_for_pair(
+    db: Session, user_id: uuid.UUID, resume_id: uuid.UUID, job_id: uuid.UUID
+) -> Analysis | None:
+    """
+    Used by agent tools, which are handed a resume_id/job_id from the
+    current UI context rather than a specific analysis_id — this finds
+    whichever analysis was most recently run for that pair.
+    """
+    return (
+        db.query(Analysis)
+        .filter(
+            Analysis.user_id == user_id,
+            Analysis.resume_id == resume_id,
+            Analysis.job_id == job_id,
+        )
+        .order_by(Analysis.created_at.desc())
+        .first()
+    )
