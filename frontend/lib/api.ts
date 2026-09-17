@@ -332,11 +332,21 @@ export function askAssistant(
   });
 }
 
+export type QuestionEvaluation = {
+  technical_accuracy: string | null;
+  depth: string | null;
+  relevance: string | null;
+  strengths: string[];
+  missing_concepts: string[];
+  improvement_advice: string | null;
+};
+
 export type InterviewQuestionState = {
   question: string;
   focus_skill: string | null;
   answer: string | null;
   answered_at: string | null;
+  evaluation: QuestionEvaluation | null;
 };
 
 export type InterviewSessionRead = {
@@ -372,6 +382,16 @@ export function submitInterviewAnswer(
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ answer }),
+    }
+  );
+}
+
+export function generateInterviewFeedback(token: string, sessionId: string) {
+  return request<InterviewSessionRead>(
+    `/interview-sessions/${sessionId}/feedback`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
 }

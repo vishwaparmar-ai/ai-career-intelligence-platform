@@ -4,10 +4,26 @@ import { useState } from "react";
 import {
   startInterviewSession,
   submitInterviewAnswer,
+  generateInterviewFeedback,
   type InterviewSessionRead,
 } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+
+const RATING_STYLES: Record<string, string> = {
+  strong: "bg-match-soft text-match",
+  adequate: "bg-signal-soft text-signal",
+  weak: "bg-gap-soft text-gap",
+};
+
+function RatingBadge({ label, value }: { label: string; value: string | null }) {
+  const style = value ? RATING_STYLES[value.toLowerCase()] ?? "bg-navy/5 text-navy" : "bg-navy/5 text-navy";
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${style}`}>
+      {label}: {value ?? "Not assessed"}
+    </span>
+  );
+}
 
 export function InterviewPanel({
   resumeId,
@@ -20,6 +36,7 @@ export function InterviewPanel({
   const [answerText, setAnswerText] = useState("");
   const [starting, setStarting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [gettingFeedback, setGettingFeedback] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleStart() {
@@ -64,6 +81,25 @@ export function InterviewPanel({
     }
   }
 
+  async function handleGetFeedback() {
+    const token = getToken();
+    if (!token || !session) return;
+
+    setGettingFeedback(true);
+    setError(null);
+
+    try {
+      const updated = await generateInterviewFeedback(token, session.id);
+      setSession(updated);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Couldn't generate feedback."
+      );
+    } finally {
+      setGettingFeedback(false);
+    }
+  }
+
   // Not started yet.
   if (!session) {
     return (
@@ -88,6 +124,7 @@ export function InterviewPanel({
 
   const isComplete = session.status === "completed";
   const currentQuestion = session.questions[session.current_index];
+  const hasFeedback = session.questions.some((q) => q.evaluation);
 
   return (
     <div className="rounded-2xl border border-line bg-white p-6">
@@ -131,13 +168,24 @@ export function InterviewPanel({
 
       {isComplete && (
         <div className="mt-4">
-          <p className="text-sm font-medium text-match">
-            Interview complete — nice work.
-          </p>
-          <p className="mt-1 text-xs text-ink/50">
-            Feedback and scoring on your answers is coming in a later
-            update. For now, here's your transcript.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-match">
+              Interview complete — nice work.
+            </p>
+            {!hasFeedback && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleGetFeedback}
+                disabled={gettingFeedback}
+                className="w-auto px-0 text-navy hover:underline"
+              >
+                {gettingFeedback ? "Evaluating…" : "Get feedback →"}
+              </Button>
+            )}
+          </div>
+
+          {error && <p className="mt-2 text-sm text-gap">{error}</p>}
 
           <ol className="mt-4 space-y-4">
             {session.questions.map((q, i) => (
@@ -148,6 +196,47 @@ export function InterviewPanel({
                 <p className="mt-2 text-sm text-ink/70">
                   {q.answer || "(no answer recorded)"}
                 </p>
+
+                {q.evaluation && (
+                  <div className="mt-4 border-t border-line pt-4">
+                    <div className="flex flex-wrap gap-2">
+                      <RatingBadge label="Accuracy" value={q.evaluation.technical_accuracy} />
+                      <RatingBadge label="Depth" value={q.evaluation.depth} />
+                      <RatingBadge label="Relevance" value={q.evaluation.relevance} />
+                    </div>
+
+                    {q.evaluation.strengths.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-ink/60">Strengths</p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink/70">
+                          {q.evaluation.strengths.map((s, j) => (
+                            <li key={j}>{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {q.evaluation.missing_concepts.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-ink/60">
+                          Missing concepts
+                        </p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink/70">
+                          {q.evaluation.missing_concepts.map((s, j) => (
+                            <li key={j}>{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {q.evaluation.improvement_advice && (
+                      <p className="mt-3 rounded-lg bg-navy/5 p-3 text-sm text-ink/80">
+                        <span className="font-medium text-ink">To improve:</span>{" "}
+                        {q.evaluation.improvement_advice}
+                      </p>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ol>

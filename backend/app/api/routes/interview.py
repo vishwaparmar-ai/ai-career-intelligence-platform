@@ -67,3 +67,21 @@ def submit_answer(
         raise HTTPException(status_code=404, detail=str(exc))
     except interview_service.InterviewSessionCompleteError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/feedback", response_model=InterviewSessionRead)
+def generate_feedback(
+    session_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return interview_service.generate_feedback(
+            db, session_id=session_id, user_id=current_user.id
+        )
+    except interview_service.InterviewSessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except interview_service.InterviewSessionNotCompleteError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except interview_service.InterviewNotPossibleError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
