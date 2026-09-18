@@ -1,5 +1,41 @@
 import type { MatchResult } from "@/lib/api";
 
+function ScoreRing({ score }: { score: number }) {
+  const radius = 50;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, score));
+  const offset = circumference - (clamped / 100) * circumference;
+
+  return (
+    <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+      <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90">
+        <circle cx="60" cy="60" r={radius} fill="none" stroke="#DEDBD1" strokeWidth="10" />
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke="#1B2A4A"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <span className="absolute font-display text-2xl text-navy">
+        {Math.round(clamped)}%
+      </span>
+    </div>
+  );
+}
+
+function scoreLabel(score: number): string {
+  if (score >= 75) return "Strong match — you're close to ready for this role.";
+  if (score >= 50) return "Good potential, with real gaps worth closing.";
+  if (score >= 25) return "Early stage — meaningful gaps between you and this role.";
+  return "Significant gaps for this specific role.";
+}
+
 function ScoreBar({ label, score, weightPct }: { label: string; score: number; weightPct: number }) {
   return (
     <div>
@@ -43,14 +79,17 @@ function SkillChips({ label, items, tone }: { label: string; items: string[]; to
 export function MatchResultCard({ result }: { result: MatchResult }) {
   return (
     <div className="rounded-2xl border border-line bg-white p-6">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-lg text-navy">Readiness score</h2>
-        <span className="font-display text-3xl text-navy">
-          {result.overall_score}%
-        </span>
+      <div className="flex items-center gap-6">
+        <ScoreRing score={result.overall_score} />
+        <div>
+          <h2 className="text-lg text-navy">Your readiness for this role</h2>
+          <p className="mt-1 text-sm text-ink/60">
+            {scoreLabel(result.overall_score)}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 space-y-4 border-t border-line pt-6">
         <ScoreBar
           label="Required skills"
           score={result.required_skills.score}

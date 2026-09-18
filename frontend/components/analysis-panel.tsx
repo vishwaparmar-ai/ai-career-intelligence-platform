@@ -42,9 +42,18 @@ export function AnalysisPanel() {
     const token = getToken();
     if (!token) return;
     listResumes(token).then((rs) => {
-      setResumes(rs.filter((r) => r.status === "ready"));
+      const ready = rs.filter((r) => r.status === "ready");
+      setResumes(ready);
+      // Both lists come back newest-first — defaulting to the most
+      // recent upload means someone who just finished uploading and
+      // parsing doesn't have to pick it again from a dropdown a moment
+      // later. They can still change the selection manually.
+      if (ready.length > 0) setResumeId((prev) => prev || ready[0].id);
     });
-    listJobs(token).then(setJobs);
+    listJobs(token).then((js) => {
+      setJobs(js);
+      if (js.length > 0) setJobId((prev) => prev || js[0].id);
+    });
   }, []);
 
   async function handleRun() {
@@ -115,10 +124,10 @@ export function AnalysisPanel() {
   return (
     <div>
       <div className="rounded-2xl border border-line bg-white p-6">
-        <h2 className="text-lg text-navy">Run a readiness check</h2>
+        <h2 className="text-lg text-navy">Get your readiness score</h2>
         <p className="mt-1 text-sm text-ink/60">
-          Pick a resume and a job you&apos;ve already extracted a profile
-          for.
+          Your most recent resume and job are selected below — change
+          either if you want to check a different pairing.
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
